@@ -41,6 +41,7 @@ layout: null
             font-style: italic;
         }
 
+        /* Gallery Grid */
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -55,6 +56,7 @@ layout: null
             position: relative;
             overflow: hidden;
             border-radius: 4px;
+            cursor: pointer; /* Change mouse to pointer to indicate it's clickable */
         }
 
         .gallery-item img {
@@ -67,6 +69,58 @@ layout: null
 
         .gallery-item:hover img {
             transform: scale(1.05);
+        }
+
+        /* Lightbox / Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 9999; /* Sit on top */
+            padding-top: 50px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95); /* Black with opacity */
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 85vh;
+            object-fit: contain; /* Keeps image proportions */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+
+        /* Animation for opening */
+        .modal-content {
+            animation-name: zoom;
+            animation-duration: 0.3s;
+        }
+
+        @keyframes zoom {
+            from {transform:scale(0.9)} 
+            to {transform:scale(1)}
+        }
+
+        /* The Close Button */
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
         }
 
         footer {
@@ -87,20 +141,65 @@ layout: null
     <main class="gallery">
         <!-- Jekyll will automatically loop through the "images" folder -->
         {% for image in site.static_files %}
-            {% if image.path contains '/img/' %}
+            {% if image.path contains '/images/' %}
                 {% assign extension = image.extname | downcase %}
                 {% if extension == '.jpg' or extension == '.jpeg' or extension == '.png' %}
                 <div class="gallery-item">
-                    <img src="{{ site.baseurl }}{{ image.path }}" alt="Photography" loading="lazy">
+                    <!-- The class "gallery-img" helps JavaScript find the images -->
+                    <img class="gallery-img" src="{{ site.baseurl }}{{ image.path }}" alt="Photography" loading="lazy">
                 </div>
                 {% endif %}
             {% endif %}
         {% endfor %}
     </main>
 
+    <!-- The Modal (Hidden by default) -->
+    <div id="imageModal" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="fullImage">
+    </div>
+
     <footer>
         <p>&copy; 2026 João Manoel Herrera Pinheiro. All rights reserved.</p>
     </footer>
+
+    <!-- JavaScript for the Lightbox effect -->
+    <script>
+        // Get modal elements
+        const modal = document.getElementById("imageModal");
+        const modalImg = document.getElementById("fullImage");
+        const span = document.getElementsByClassName("close")[0];
+
+        // Get all images inside the gallery
+        const images = document.querySelectorAll(".gallery-img");
+
+        // Loop through images and add a click event
+        images.forEach(img => {
+            img.addEventListener("click", function() {
+                modal.style.display = "block";
+                modalImg.src = this.src; // Set modal image source to the clicked image source
+            });
+        });
+
+        // Close modal when clicking the 'X'
+        span.addEventListener("click", function() {
+            modal.style.display = "none";
+        });
+
+        // Close modal when clicking outside the image (on the dark background)
+        modal.addEventListener("click", function(event) {
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        });
+        
+        // Close modal when pressing the Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape" && modal.style.display === "block") {
+                modal.style.display = "none";
+            }
+        });
+    </script>
 
 </body>
 </html>
