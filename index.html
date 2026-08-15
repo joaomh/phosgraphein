@@ -141,7 +141,7 @@ layout: null
     <main class="gallery">
         <!-- Jekyll will automatically loop through the "images" folder -->
         {% for image in site.static_files %}
-            {% if image.path contains '/images/' %}
+            {% if image.path contains '/img/' %}
                 {% assign extension = image.extname | downcase %}
                 {% if extension == '.jpg' or extension == '.jpeg' or extension == '.png' %}
                 <div class="gallery-item">
