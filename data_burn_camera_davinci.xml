@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--DbAppVer="21.0.4.0005" DbPrjVer="17"-->
+<FontRenderItemVec DbId="75857ce5-67e8-4d47-8140-a6a7c29570cf">
+ <FieldsBlob/>
+ <InheritedCollection>
+  <Element>
+   <FontRenderItem DbId="7af0845b-194f-48d9-bad4-909dc48cb09e">
+    <FieldsBlob>000000010000000200000008004e0061006d00650000000a000000001e004200750072006e00200049006e0020004600690065006c006400200032000000100046006f006e007400530069007a006500000087003f96c8b440000000</FieldsBlob>
+    <Text>© João Manoel Herrera Pinheiro</Text>
+    <FontDesc>Nimbus Roman,-1,89,5,50,0,0,0,0,0,Regular</FontDesc>
+    <Type>128</Type>
+    <X>0</X>
+    <Y>0.9752500057220459</Y>
+    <ForegroundColor>
+     <Element>1</Element>
+     <Element>1</Element>
+     <Element>1</Element>
+    </ForegroundColor>
+    <BackgroundColor>
+     <Element>0</Element>
+     <Element>0</Element>
+     <Element>0</Element>
+    </BackgroundColor>
+    <Opacity>0.5964912176132202</Opacity>
+    <HorzAlign>0</HorzAlign>
+    <IsFadeUp>false</IsFadeUp>
+    <FadeUp>0</FadeUp>
+    <IsFadeDown>false</IsFadeDown>
+    <FadeDown>0</FadeDown>
+    <Logo/>
+    <IsRenderTextPrefixed>false</IsRenderTextPrefixed>
+   </FontRenderItem>
+  </Element>
+  <Element>
+   <FontRenderItem DbId="2cd29814-2134-46d4-9aeb-0617f8653274">
+    <FieldsBlob>000000010000000200000008004e0061006d00650000000a000000001e004200750072006e00200049006e0020004600690065006c006400200031000000100046006f006e007400530069007a006500000087003f96c8b440000000</FieldsBlob>
+    <Text>📷 %{Cam Type} | ◉ ISO %{ISO} | ⏱ %{Shutter Speed} | F%{Cam Aperture} | ⓘ %{Focal Point (mm)} mm</Text>
+    <FontDesc>Nimbus Roman,-1,89,5,50,0,0,0,0,0,Regular</FontDesc>
+    <Type>128</Type>
+    <X>0</X>
+    <Y>0</Y>
+    <ForegroundColor>
+     <Element>1</Element>
+     <Element>1</Element>
+     <Element>1</Element>
+    </ForegroundColor>
+    <BackgroundColor>
+     <Element>0</Element>
+     <Element>0</Element>
+     <Element>0</Element>
+    </BackgroundColor>
+    <Opacity>0.5964912176132202</Opacity>
+    <HorzAlign>0</HorzAlign>
+    <IsFadeUp>false</IsFadeUp>
+    <FadeUp>0</FadeUp>
+    <IsFadeDown>false</IsFadeDown>
+    <FadeDown>0</FadeDown>
+    <Logo/>
+    <IsRenderTextPrefixed>false</IsRenderTextPrefixed>
+   </FontRenderItem>
+  </Element>
+ </InheritedCollection>
+</FontRenderItemVec>
