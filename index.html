@@ -282,75 +282,94 @@ layout: null
         const images = Array.from(document.querySelectorAll(".gallery-img"));
         let currentIndex = 0;
 
+        /*
+         * =====================================================
+         * EXIF EXTRACTION LÓGICA (LEITURA BINÁRIA DIRETA)
+         * =====================================================
+         */
+
         function extractExif(img) {
-            EXIF.getData(img, function() {
-                try {
-                    let tags = EXIF.getAllTags(this);
-                    
-                    // Diagnóstico: Mostra no F12 exatamente o que a biblioteca consegue ler da imagem
-                    console.log("EXIF lido da imagem:", img.src, tags);
+            // Em vez de ler do HTML, descarregamos a imagem como bytes (ArrayBuffer)
+            fetch(img.src)
+                .then(response => response.arrayBuffer())
+                .then(buffer => {
+                    try {
+                        // O exif-js processa o ficheiro puro
+                        let tags = EXIF.readFromBinaryFile(buffer);
+                        
+                        console.log("EXIF Binário lido de:", img.src, tags);
 
-                    let exifData = [];
+                        let exifData = [];
 
-                    // 1. Camera Model
-                    if (tags.Model) {
-                        exifData.push(tags.Model.toString().trim());
-                    }
+                        // 1. Camera Model
+                        if (tags.Model) {
+                            exifData.push(tags.Model.toString().trim());
+                        }
 
-                    // 2. Focal Length
-                    if (tags.FocalLength) {
-                        let f = tags.FocalLength;
-                        let val = f.numerator ? (f.numerator / f.denominator) : parseFloat(f);
-                        if (!isNaN(val)) exifData.push(Math.round(val) + " mm");
-                    }
+                        // 2. Lens Model (tentar extrair a lente também)
+                        let lens = tags.LensModel || tags.Lens;
+                        if (lens) {
+                            exifData.push(lens.toString().trim());
+                        }
 
-                    // 3. Aperture
-                    let fnum = tags.FNumber || tags.ApertureValue;
-                    if (fnum) {
-                        let val = fnum.numerator ? (fnum.numerator / fnum.denominator) : parseFloat(fnum);
-                        if (!isNaN(val)) exifData.push("f/" + val.toFixed(1));
-                    }
+                        // 3. Focal Length
+                        if (tags.FocalLength) {
+                            let f = tags.FocalLength;
+                            let val = f.numerator ? (f.numerator / f.denominator) : parseFloat(f);
+                            if (!isNaN(val)) exifData.push(Math.round(val) + " mm");
+                        }
 
-                    // 4. ISO
-                    let iso = tags.ISOSpeedRatings || tags.ISO;
-                    if (iso) {
-                        exifData.push("ISO " + iso.toString());
-                    }
+                        // 4. Aperture
+                        let fnum = tags.FNumber || tags.ApertureValue;
+                        if (fnum) {
+                            let val = fnum.numerator ? (fnum.numerator / fnum.denominator) : parseFloat(fnum);
+                            if (!isNaN(val)) exifData.push("f/" + val.toFixed(1));
+                        }
 
-                    // 5. Shutter Speed
-                    if (tags.ExposureTime) {
-                        let exp = tags.ExposureTime;
-                        let val = exp.numerator ? (exp.numerator / exp.denominator) : parseFloat(exp);
-                        if (!isNaN(val) && val > 0) {
-                            if (val >= 1) {
-                                exifData.push(val + " s");
-                            } else {
-                                exifData.push("1/" + Math.round(1 / val) + " s");
+                        // 5. ISO
+                        let iso = tags.ISOSpeedRatings || tags.ISO;
+                        if (iso) {
+                            exifData.push("ISO " + iso.toString());
+                        }
+
+                        // 6. Shutter Speed
+                        if (tags.ExposureTime) {
+                            let exp = tags.ExposureTime;
+                            let val = exp.numerator ? (exp.numerator / exp.denominator) : parseFloat(exp);
+                            if (!isNaN(val) && val > 0) {
+                                if (val >= 1) {
+                                    exifData.push(val + " s");
+                                } else {
+                                    exifData.push("1/" + Math.round(1 / val) + " s");
+                                }
                             }
                         }
-                    }
 
-                    let exifString = exifData.join(" | ");
+                        let exifString = exifData.join(" | ");
 
-                    if (!exifString) {
-                        exifString = "No EXIF data available";
-                    }
-
-                    img.setAttribute("data-exif", exifString);
-
-                    let container = img.closest('.gallery-item');
-                    if (container) {
-                        let exifSpan = container.querySelector('.caption-exif');
-                        if (exifSpan) {
-                            exifSpan.innerText = exifString;
+                        if (!exifString) {
+                            exifString = "No EXIF data available";
                         }
-                    }
-                } catch (error) {
-                    console.error("Erro ao ler dados da imagem:", img.src, error);
-                }
-            });
-        }
 
+                        // Guarda no atributo HTML
+                        img.setAttribute("data-exif", exifString);
+
+                        // Atualiza a legenda na grade de fotos
+                        let container = img.closest('.gallery-item');
+                        if (container) {
+                            let exifSpan = container.querySelector('.caption-exif');
+                            if (exifSpan) {
+                                exifSpan.innerText = exifString;
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Erro ao processar binário EXIF:", img.src, error);
+                    }
+                })
+                .catch(err => {
+                    console.error("Erro no fetch da imagem:", img.src, err);
+                });
+        }
         images.forEach(img => {
             if (img.complete) {
                 extractExif(img);
