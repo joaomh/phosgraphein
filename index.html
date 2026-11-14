@@ -1,12 +1,295 @@
-/*
+---
+layout: null
+---
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>João M. H. Pinheiro | Photography</title>
+
+    <!-- EXIF.js para leitura automática de metadados -->
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #f5f5f5;
+            --accent-color: #888888;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        header {
+            text-align: center;
+            padding: 4rem 2rem 2rem;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            color: var(--accent-color);
+            font-size: 1rem;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        /* Gallery Grid */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-auto-rows: 300px;
+            grid-gap: 15px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+            display: block;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Overlay de Legenda na Grade */
+        .caption-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+            padding: 20px 15px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .gallery-item:hover .caption-overlay {
+            opacity: 1;
+        }
+
+        .caption-exif {
+            font-size: 0.75rem;
+            color: #ddd;
+            font-family: monospace;
+        }
+
+        .caption-copyright {
+            font-size: 0.85rem;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        /* Lightbox / Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            padding-top: 50px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 80vh;
+            object-fit: contain;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            animation-name: zoom;
+            animation-duration: 0.3s;
+        }
+
+        /* Legenda no Modal */
+        .modal-caption-container {
+            text-align: center;
+            margin-top: 15px;
+            color: #ccc;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            padding: 0 20px;
+        }
+
+        .modal-caption-container span.exif {
+            display: block;
+            font-size: 0.8rem;
+            font-family: monospace;
+            color: #aaa;
+            margin-top: 4px;
+        }
+
+        @keyframes zoom {
+            from { transform: scale(0.9) }
+            to { transform: scale(1) }
+        }
+
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+            z-index: 10001;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+            text-decoration: none;
+        }
+
+        .prev, .next {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 50px;
+            font-weight: 300;
+            cursor: pointer;
+            user-select: none;
+            padding: 20px;
+            z-index: 10000;
+            transition: color 0.2s ease;
+        }
+
+        .prev { left: 10px; }
+        .next { right: 10px; }
+        .prev:hover, .next:hover { color: #aaa; }
+
+        footer {
+            text-align: center;
+            padding: 3rem;
+            color: var(--accent-color);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            .gallery {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                grid-auto-rows: 200px;
+                grid-gap: 8px;
+                padding: 10px;
+            }
+            .modal-content {
+                max-width: 94%;
+                max-height: 75vh;
+            }
+            .prev, .next { font-size: 35px; padding: 10px; }
+            .prev { left: 0; }
+            .next { right: 0; }
+            .close { top: 10px; right: 15px; font-size: 35px; }
+            .caption-overlay {
+                opacity: 1;
+                background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+            }
+            .caption-exif { display: none; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>João M. H. Pinheiro</h1>
+        <p>Visual Explorations & Photography</p>
+    </header>
+
+    <main class="gallery">
+        {% assign images = site.static_files | where_exp: "file", "file.path contains '/img/'" | sort: "path" | reverse %}
+        
+        {% for image in images %}
+            {% assign extension = image.extname | downcase %}
+            
+            {% if extension == '.jpg' or extension == '.jpeg' %}
+                <div class="gallery-item">
+                    <img
+                        class="gallery-img"
+                        src="{{ site.baseurl }}{{ image.path }}"
+                        alt="Photography"
+                        loading="lazy"
+                        data-exif=""
+                        data-copyright="© João Manoel Herrera Pinheiro"
+                    >
+                    
+                    <div class="caption-overlay">
+                        <span class="caption-copyright">© João Manoel Herrera Pinheiro</span>
+                        <span class="caption-exif">Loading metadata...</span>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </main>
+
+    <!-- Modal -->
+    <div id="imageModal" class="modal">
+        <span class="close" aria-label="Close">&times;</span>
+        <span class="prev" aria-label="Previous photo">&#10094;</span>
+        
+        <img class="modal-content" id="fullImage" alt="Photography">
+        <div class="modal-caption-container" id="modalCaption"></div>
+
+        <span class="next" aria-label="Next photo">&#10095;</span>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 João Manoel Herrera Pinheiro. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const modal = document.getElementById("imageModal");
+        const modalImg = document.getElementById("fullImage");
+        const modalCaption = document.getElementById("modalCaption");
+        const closeButton = document.querySelector(".close");
+        const prevButton = document.querySelector(".prev");
+        const nextButton = document.querySelector(".next");
+        const images = Array.from(document.querySelectorAll(".gallery-img"));
+        let currentIndex = 0;
+
+        /*
          * =====================================================
-         * EXIF EXTRACTION LÓGICA (ATUALIZADA)
+         * EXIF EXTRACTION LÓGICA
          * =====================================================
          */
 
         function extractExif(img) {
             EXIF.getData(img, function() {
-                // Extração das tags EXIF padrão
                 let model = EXIF.getTag(this, "Model");
                 let focal = EXIF.getTag(this, "FocalLength");
                 let fnum  = EXIF.getTag(this, "FNumber");
@@ -15,27 +298,22 @@
 
                 let exifData = [];
 
-                // 1. Camera Model
                 if (model) {
                     exifData.push(model.trim());
                 }
 
-                // 2. Focal Length (mm)
                 if (focal) {
                     exifData.push(Number(focal) + " mm");
                 }
 
-                // 3. Aperture
                 if (fnum) {
                     exifData.push("f/" + Number(fnum).toFixed(1));
                 }
 
-                // 4. ISO
                 if (iso) {
                     exifData.push("ISO " + iso);
                 }
 
-                // 5. Shutter Speed
                 if (exp) {
                     let e = Number(exp);
                     if (e >= 1) {
@@ -45,18 +323,14 @@
                     }
                 }
 
-                // Junta todas as informações encontradas separadas por " | "
                 let exifString = exifData.join(" | ");
 
-                // Texto de fallback em inglês
                 if (!exifString) {
                     exifString = "No EXIF data available";
                 }
 
-                // Salva no atributo HTML para o Modal (Lightbox) usar depois
                 img.setAttribute("data-exif", exifString);
 
-                // Atualiza a legenda na grade de fotos
                 let container = img.closest('.gallery-item');
                 if (container) {
                     let exifSpan = container.querySelector('.caption-exif');
@@ -66,3 +340,100 @@
                 }
             });
         }
+
+        images.forEach(img => {
+            if (img.complete) {
+                extractExif(img);
+            } else {
+                img.onload = () => extractExif(img);
+            }
+        });
+
+        /*
+         * =====================================================
+         * LIGHTBOX LÓGICA (MODAL)
+         * =====================================================
+         */
+
+        function updateModalContent(index) {
+            const img = images[index];
+            modalImg.src = img.src;
+            modalImg.alt = img.alt;
+            
+            const copyrightText = img.getAttribute('data-copyright') || '© João Manoel Herrera Pinheiro';
+            const exifText = img.getAttribute('data-exif') || 'Loading metadata...';
+
+            modalCaption.innerHTML = `
+                ${copyrightText} 
+                <span class="exif">${exifText}</span>
+            `;
+        }
+
+        function openImage(index) {
+            currentIndex = index;
+            updateModalContent(currentIndex);
+            modal.style.display = "block";
+        }
+
+        function nextImage() {
+            currentIndex++;
+            if (currentIndex >= images.length) currentIndex = 0;
+            updateModalContent(currentIndex);
+        }
+
+        function previousImage() {
+            currentIndex--;
+            if (currentIndex < 0) currentIndex = images.length - 1;
+            updateModalContent(currentIndex);
+        }
+
+        images.forEach(function(img, index) {
+            img.addEventListener("click", function() {
+                openImage(index);
+            });
+        });
+
+        prevButton.addEventListener("click", function(event) {
+            event.stopPropagation();
+            previousImage();
+        });
+
+        nextButton.addEventListener("click", function(event) {
+            event.stopPropagation();
+            nextImage();
+        });
+
+        closeButton.addEventListener("click", function() {
+            modal.style.display = "none";
+        });
+
+        modal.addEventListener("click", function(event) {
+            if (event.target === modal || event.target === modalCaption) {
+                modal.style.display = "none";
+            }
+        });
+
+        document.addEventListener("keydown", function(event) {
+            if (modal.style.display !== "block") return;
+            if (event.key === "Escape") modal.style.display = "none";
+            if (event.key === "ArrowLeft") previousImage();
+            if (event.key === "ArrowRight") nextImage();
+        });
+
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        modal.addEventListener("touchstart", function(event) {
+            touchStartX = event.changedTouches[0].screenX;
+        });
+
+        modal.addEventListener("touchend", function(event) {
+            touchEndX = event.changedTouches[0].screenX;
+            const difference = touchStartX - touchEndX;
+            
+            if (difference > 50) nextImage();
+            if (difference < -50) previousImage();
+        });
+    </script>
+</body>
+</html>
