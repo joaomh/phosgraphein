@@ -212,7 +212,6 @@ layout: null
         /* Mobile Adjustments */
         @media (max-width: 600px) {
             .gallery-item {
-                /* Em telemóvel, reduzimos a altura para caberem mais fotos visíveis */
                 height: 180px; 
             }
             .modal-content {
@@ -292,39 +291,112 @@ layout: null
 
         /*
          * =====================================================
-         * LÓGICA DE EXIF COM A BIBLIOTECA 'EXIFR'
+         * 1. ATIVAÇÃO DO MODAL (Garante que o clique sempre funciona)
+         * =====================================================
+         */
+
+        function updateModalContent(index) {
+            const img = images[index];
+            modalImg.src = img.src;
+            modalImg.alt = img.alt;
+            
+            const copyrightText = img.getAttribute('data-copyright') || '© João Manoel Herrera Pinheiro';
+            const exifText = img.getAttribute('data-exif') || 'Loading metadata...';
+
+            modalCaption.innerHTML = `${copyrightText} <span class="exif">${exifText}</span>`;
+        }
+
+        function openImage(index) {
+            currentIndex = index;
+            updateModalContent(currentIndex);
+            modal.style.display = "block";
+        }
+
+        function nextImage() {
+            currentIndex++;
+            if (currentIndex >= images.length) currentIndex = 0;
+            updateModalContent(currentIndex);
+        }
+
+        function previousImage() {
+            currentIndex--;
+            if (currentIndex < 0) currentIndex = images.length - 1;
+            updateModalContent(currentIndex);
+        }
+
+        // Adiciona os cliques em todas as imagens
+        images.forEach(function(img, index) {
+            img.addEventListener("click", function() {
+                openImage(index);
+            });
+        });
+
+        prevButton.addEventListener("click", function(event) {
+            event.stopPropagation();
+            previousImage();
+        });
+
+        nextButton.addEventListener("click", function(event) {
+            event.stopPropagation();
+            nextImage();
+        });
+
+        closeButton.addEventListener("click", function() {
+            modal.style.display = "none";
+        });
+
+        modal.addEventListener("click", function(event) {
+            if (event.target === modal || event.target === modalCaption) {
+                modal.style.display = "none";
+            }
+        });
+
+        document.addEventListener("keydown", function(event) {
+            if (modal.style.display !== "block") return;
+            if (event.key === "Escape") modal.style.display = "none";
+            if (event.key === "ArrowLeft") previousImage();
+            if (event.key === "ArrowRight") nextImage();
+        });
+
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        modal.addEventListener("touchstart", function(event) {
+            touchStartX = event.changedTouches[0].screenX;
+        });
+
+        modal.addEventListener("touchend", function(event) {
+            touchEndX = event.changedTouches[0].screenX;
+            const difference = touchStartX - touchEndX;
+            if (difference > 50) nextImage();
+            if (difference < -50) previousImage();
+        });
+
+        /*
+         * =====================================================
+         * 2. LEITURA DE EXIF (Executada de forma segura)
          * =====================================================
          */
 
         function extractExif(img) {
+            // Verifica se a biblioteca carregou corretamente
+            if (typeof exifr === 'undefined') {
+                console.warn("A biblioteca EXIFR não carregou. Verifique a sua ligação ou bloqueador de anúncios.");
+                return;
+            }
+
+            // Tenta ler os metadados da imagem
             exifr.parse(img).then(tags => {
-                
-                if (!tags) {
-                    throw new Error("Sem tags na imagem");
-                }
+                if (!tags) return;
 
                 let exifData = [];
 
-                if (tags.Model) {
-                    exifData.push(tags.Model.toString().trim());
-                }
-
-                if (tags.LensModel) {
-                    exifData.push(tags.LensModel.toString().trim());
-                }
-
-                if (tags.FocalLength) {
-                    exifData.push(Math.round(tags.FocalLength) + " mm");
-                }
-
-                if (tags.FNumber) {
-                    exifData.push("f/" + tags.FNumber.toFixed(1));
-                }
-
-                if (tags.ISO) {
-                    exifData.push("ISO " + tags.ISO);
-                }
-
+                if (tags.Model) exifData.push(tags.Model.toString().trim());
+                if (tags.LensModel) exifData.push(tags.LensModel.toString().trim());
+                if (tags.FocalLength) exifData.push(Math.round(tags.FocalLength) + " mm");
+                if (tags.FNumber) exifData.push("f/" + tags.FNumber.toFixed(1));
+                if (tags.ISO) exifData.push("ISO " + tags.ISO);
+                
                 if (tags.ExposureTime) {
                     let e = tags.ExposureTime;
                     if (e >= 1) {
@@ -335,11 +407,9 @@ layout: null
                 }
 
                 let exifString = exifData.join(" | ");
+                if (!exifString) exifString = "No EXIF data available";
 
-                if (!exifString) {
-                    exifString = "No EXIF data available";
-                }
-
+                // Aplica os dados encontrados no HTML da imagem
                 img.setAttribute("data-exif", exifString);
 
                 let container = img.closest('.gallery-item');
@@ -351,10 +421,18 @@ layout: null
                 }
 
             }).catch(err => {
-                img.setAttribute("data-exif", "No EXIF data available");
-                let container = img.closest('.gallery-item');
-                if (container) {
-                    let exifSpan = container.querySelector('.caption-exif');
-                    if (exifSpan) exifSpan.innerText = "No EXIF data available";
-                }
+                console.log("Aviso ao ler imagem (pode ignorar):", img.src);
             });
+        }
+
+        // Dispara a leitura apenas quando a imagem terminar de carregar
+        images.forEach(img => {
+            if (img.complete) {
+                extractExif(img);
+            } else {
+                img.onload = () => extractExif(img);
+            }
+        });
+    </script>
+</body>
+</html>
