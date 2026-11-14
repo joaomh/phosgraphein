@@ -272,7 +272,7 @@ layout: null
         <p>&copy; 2026 João Manoel Herrera Pinheiro. All rights reserved.</p>
     </footer>
 
-    <script>
+<script>
         const modal = document.getElementById("imageModal");
         const modalImg = document.getElementById("fullImage");
         const modalCaption = document.getElementById("modalCaption");
@@ -282,80 +282,75 @@ layout: null
         const images = Array.from(document.querySelectorAll(".gallery-img"));
         let currentIndex = 0;
 
-        /*
-         * =====================================================
-         * EXIF EXTRACTION LÓGICA (CORRIGIDA PARA FRAÇÕES)
-         * =====================================================
-         */
-
         function extractExif(img) {
             EXIF.getData(img, function() {
-                // Puxa todas as tags de uma vez
-                let tags = EXIF.getAllTags(this);
+                try {
+                    let tags = EXIF.getAllTags(this);
+                    
+                    // Diagnóstico: Mostra no F12 exatamente o que a biblioteca consegue ler da imagem
+                    console.log("EXIF lido da imagem:", img.src, tags);
 
-                let model = tags.Model;
-                let focal = tags.FocalLength;
-                let fnum  = tags.FNumber || tags.ApertureValue;
-                let iso   = tags.ISOSpeedRatings || tags.ISO || tags.PhotographicSensitivity;
-                let exp   = tags.ExposureTime;
+                    let exifData = [];
 
-                let exifData = [];
-
-                // 1. Camera Model
-                if (model) {
-                    exifData.push(model.trim());
-                }
-
-                // 2. Focal Length (mm)
-                if (focal != null) {
-                    // Trata números racionais (numerador/denominador) ou números simples
-                    let f = focal.numerator ? (focal.numerator / focal.denominator) : Number(focal);
-                    exifData.push(f.toFixed(0) + " mm");
-                }
-
-                // 3. Aperture
-                if (fnum != null) {
-                    let a = fnum.numerator ? (fnum.numerator / fnum.denominator) : Number(fnum);
-                    exifData.push("f/" + a.toFixed(1));
-                }
-
-                // 4. ISO
-                if (iso != null) {
-                    exifData.push("ISO " + iso);
-                }
-
-                // 5. Shutter Speed
-                if (exp != null) {
-                    let e = exp.numerator ? (exp.numerator / exp.denominator) : Number(exp);
-                    if (e >= 1) {
-                        exifData.push(e + " s");
-                    } else {
-                        // Converte 0.001 para 1/1000
-                        exifData.push("1/" + Math.round(1 / e) + " s");
+                    // 1. Camera Model
+                    if (tags.Model) {
+                        exifData.push(tags.Model.toString().trim());
                     }
-                }
 
-                let exifString = exifData.join(" | ");
-
-                if (!exifString) {
-                    exifString = "No EXIF data available";
-                }
-
-                // Salva no atributo HTML
-                img.setAttribute("data-exif", exifString);
-
-                // Atualiza a legenda na grade de fotos
-                let container = img.closest('.gallery-item');
-                if (container) {
-                    let exifSpan = container.querySelector('.caption-exif');
-                    if (exifSpan) {
-                        exifSpan.innerText = exifString;
+                    // 2. Focal Length
+                    if (tags.FocalLength) {
+                        let f = tags.FocalLength;
+                        let val = f.numerator ? (f.numerator / f.denominator) : parseFloat(f);
+                        if (!isNaN(val)) exifData.push(Math.round(val) + " mm");
                     }
+
+                    // 3. Aperture
+                    let fnum = tags.FNumber || tags.ApertureValue;
+                    if (fnum) {
+                        let val = fnum.numerator ? (fnum.numerator / fnum.denominator) : parseFloat(fnum);
+                        if (!isNaN(val)) exifData.push("f/" + val.toFixed(1));
+                    }
+
+                    // 4. ISO
+                    let iso = tags.ISOSpeedRatings || tags.ISO;
+                    if (iso) {
+                        exifData.push("ISO " + iso.toString());
+                    }
+
+                    // 5. Shutter Speed
+                    if (tags.ExposureTime) {
+                        let exp = tags.ExposureTime;
+                        let val = exp.numerator ? (exp.numerator / exp.denominator) : parseFloat(exp);
+                        if (!isNaN(val) && val > 0) {
+                            if (val >= 1) {
+                                exifData.push(val + " s");
+                            } else {
+                                exifData.push("1/" + Math.round(1 / val) + " s");
+                            }
+                        }
+                    }
+
+                    let exifString = exifData.join(" | ");
+
+                    if (!exifString) {
+                        exifString = "No EXIF data available";
+                    }
+
+                    img.setAttribute("data-exif", exifString);
+
+                    let container = img.closest('.gallery-item');
+                    if (container) {
+                        let exifSpan = container.querySelector('.caption-exif');
+                        if (exifSpan) {
+                            exifSpan.innerText = exifString;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Erro ao ler dados da imagem:", img.src, error);
                 }
             });
         }
 
-        // Inicializa a extração
         images.forEach(img => {
             if (img.complete) {
                 extractExif(img);
@@ -363,12 +358,6 @@ layout: null
                 img.onload = () => extractExif(img);
             }
         });
-
-        /*
-         * =====================================================
-         * LIGHTBOX LÓGICA (MODAL)
-         * =====================================================
-         */
 
         function updateModalContent(index) {
             const img = images[index];
@@ -378,10 +367,7 @@ layout: null
             const copyrightText = img.getAttribute('data-copyright') || '© João Manoel Herrera Pinheiro';
             const exifText = img.getAttribute('data-exif') || 'Loading metadata...';
 
-            modalCaption.innerHTML = `
-                ${copyrightText} 
-                <span class="exif">${exifText}</span>
-            `;
+            modalCaption.innerHTML = `${copyrightText} <span class="exif">${exifText}</span>`;
         }
 
         function openImage(index) {
