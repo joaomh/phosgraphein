@@ -71,14 +71,14 @@ layout: null
             overflow: hidden;
             border-radius: 4px;
             cursor: pointer;
-            height: 280px; /* Altura padrão para as linhas */
-            flex-grow: 1; /* Permite esticar na largura para preencher a linha */
+            height: 280px;
+            flex-grow: 1;
         }
 
         .gallery-item img {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Mantém o corte suave se a imagem precisar esticar um pouco */
+            object-fit: cover;
             display: block;
             transition: transform 0.4s ease;
         }
@@ -324,7 +324,6 @@ layout: null
             updateModalContent(currentIndex);
         }
 
-        // Adiciona os cliques em todas as imagens
         images.forEach(function(img, index) {
             img.addEventListener("click", function() {
                 openImage(index);
@@ -379,13 +378,11 @@ layout: null
          */
 
         function extractExif(img) {
-            // Verifica se a biblioteca carregou corretamente
             if (typeof exifr === 'undefined') {
                 console.warn("A biblioteca EXIFR não carregou. Verifique a sua ligação ou bloqueador de anúncios.");
                 return;
             }
 
-            // Tenta ler os metadados da imagem
             exifr.parse(img).then(tags => {
                 if (!tags) return;
 
@@ -394,7 +391,16 @@ layout: null
                 if (tags.Model) exifData.push(tags.Model.toString().trim());
                 if (tags.LensModel) exifData.push(tags.LensModel.toString().trim());
                 if (tags.FocalLength) exifData.push(Math.round(tags.FocalLength) + " mm");
-                if (tags.FNumber) exifData.push("f/" + tags.FNumber.toFixed(1));
+                
+                // NOVO: Captura dupla da abertura (FNumber ou ApertureValue)
+                let aperture = tags.FNumber || tags.ApertureValue;
+                if (aperture) {
+                    let val = parseFloat(aperture);
+                    if (!isNaN(val)) {
+                        exifData.push("f/" + val.toFixed(1));
+                    }
+                }
+
                 if (tags.ISO) exifData.push("ISO " + tags.ISO);
                 
                 if (tags.ExposureTime) {
@@ -409,7 +415,6 @@ layout: null
                 let exifString = exifData.join(" | ");
                 if (!exifString) exifString = "No EXIF data available";
 
-                // Aplica os dados encontrados no HTML da imagem
                 img.setAttribute("data-exif", exifString);
 
                 let container = img.closest('.gallery-item');
@@ -425,7 +430,6 @@ layout: null
             });
         }
 
-        // Dispara a leitura apenas quando a imagem terminar de carregar
         images.forEach(img => {
             if (img.complete) {
                 extractExif(img);
