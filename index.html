@@ -11,7 +11,7 @@ layout: null
 
     <title>João M. H. Pinheiro | Photography</title>
 
-    <!-- NOVA BIBLIOTECA: exifr (Moderna e robusta) -->
+    <!-- BIBLIOTECA: exifr (Moderna e robusta) -->
     <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
 
     <style>
@@ -48,15 +48,22 @@ layout: null
             font-style: italic;
         }
 
-        /* Gallery Grid */
+        /* =========================================
+           Gallery Flexbox (Justified Layout)
+           ========================================= */
         .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            grid-auto-rows: 300px;
-            grid-gap: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
             padding: 20px;
             max-width: 1200px;
             margin: 0 auto;
+        }
+
+        /* Impede que a última linha estique desproporcionalmente */
+        .gallery::after {
+            content: "";
+            flex-grow: 999;
         }
 
         .gallery-item {
@@ -64,14 +71,16 @@ layout: null
             overflow: hidden;
             border-radius: 4px;
             cursor: pointer;
+            height: 280px; /* Altura padrão para as linhas */
+            flex-grow: 1; /* Permite esticar na largura para preencher a linha */
         }
 
         .gallery-item img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            transition: transform 0.4s ease;
+            object-fit: cover; /* Mantém o corte suave se a imagem precisar esticar um pouco */
             display: block;
+            transition: transform 0.4s ease;
         }
 
         .gallery-item:hover img {
@@ -200,12 +209,11 @@ layout: null
             font-size: 0.9rem;
         }
 
+        /* Mobile Adjustments */
         @media (max-width: 600px) {
-            .gallery {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                grid-auto-rows: 200px;
-                grid-gap: 8px;
-                padding: 10px;
+            .gallery-item {
+                /* Em telemóvel, reduzimos a altura para caberem mais fotos visíveis */
+                height: 180px; 
             }
             .modal-content {
                 max-width: 94%;
@@ -289,44 +297,34 @@ layout: null
          */
 
         function extractExif(img) {
-            // O exifr faz a promessa e lê a imagem de forma assíncrona
             exifr.parse(img).then(tags => {
                 
-                // Diagnóstico para a consola F12
-                console.log("EXIF lido pelo EXIFR em", img.src, ":", tags);
-
                 if (!tags) {
                     throw new Error("Sem tags na imagem");
                 }
 
                 let exifData = [];
 
-                // 1. Camera Model
                 if (tags.Model) {
                     exifData.push(tags.Model.toString().trim());
                 }
 
-                // 2. Lens (A nova biblioteca acha mais fácil a Lente)
                 if (tags.LensModel) {
                     exifData.push(tags.LensModel.toString().trim());
                 }
 
-                // 3. Focal Length
                 if (tags.FocalLength) {
                     exifData.push(Math.round(tags.FocalLength) + " mm");
                 }
 
-                // 4. Aperture
                 if (tags.FNumber) {
                     exifData.push("f/" + tags.FNumber.toFixed(1));
                 }
 
-                // 5. ISO
                 if (tags.ISO) {
                     exifData.push("ISO " + tags.ISO);
                 }
 
-                // 6. Shutter Speed
                 if (tags.ExposureTime) {
                     let e = tags.ExposureTime;
                     if (e >= 1) {
@@ -342,10 +340,8 @@ layout: null
                     exifString = "No EXIF data available";
                 }
 
-                // Guarda no HTML
                 img.setAttribute("data-exif", exifString);
 
-                // Atualiza a legenda na grade
                 let container = img.closest('.gallery-item');
                 if (container) {
                     let exifSpan = container.querySelector('.caption-exif');
@@ -355,7 +351,6 @@ layout: null
                 }
 
             }).catch(err => {
-                console.warn("Nenhum EXIF encontrado ou erro ao ler:", img.src);
                 img.setAttribute("data-exif", "No EXIF data available");
                 let container = img.closest('.gallery-item');
                 if (container) {
@@ -363,99 +358,3 @@ layout: null
                     if (exifSpan) exifSpan.innerText = "No EXIF data available";
                 }
             });
-        }
-
-        // Executa quando a imagem carrega
-        images.forEach(img => {
-            if (img.complete) {
-                extractExif(img);
-            } else {
-                img.onload = () => extractExif(img);
-            }
-        });
-
-        /*
-         * =====================================================
-         * LIGHTBOX LÓGICA (MODAL)
-         * =====================================================
-         */
-
-        function updateModalContent(index) {
-            const img = images[index];
-            modalImg.src = img.src;
-            modalImg.alt = img.alt;
-            
-            const copyrightText = img.getAttribute('data-copyright') || '© João Manoel Herrera Pinheiro';
-            const exifText = img.getAttribute('data-exif') || 'Loading metadata...';
-
-            modalCaption.innerHTML = `${copyrightText} <span class="exif">${exifText}</span>`;
-        }
-
-        function openImage(index) {
-            currentIndex = index;
-            updateModalContent(currentIndex);
-            modal.style.display = "block";
-        }
-
-        function nextImage() {
-            currentIndex++;
-            if (currentIndex >= images.length) currentIndex = 0;
-            updateModalContent(currentIndex);
-        }
-
-        function previousImage() {
-            currentIndex--;
-            if (currentIndex < 0) currentIndex = images.length - 1;
-            updateModalContent(currentIndex);
-        }
-
-        images.forEach(function(img, index) {
-            img.addEventListener("click", function() {
-                openImage(index);
-            });
-        });
-
-        prevButton.addEventListener("click", function(event) {
-            event.stopPropagation();
-            previousImage();
-        });
-
-        nextButton.addEventListener("click", function(event) {
-            event.stopPropagation();
-            nextImage();
-        });
-
-        closeButton.addEventListener("click", function() {
-            modal.style.display = "none";
-        });
-
-        modal.addEventListener("click", function(event) {
-            if (event.target === modal || event.target === modalCaption) {
-                modal.style.display = "none";
-            }
-        });
-
-        document.addEventListener("keydown", function(event) {
-            if (modal.style.display !== "block") return;
-            if (event.key === "Escape") modal.style.display = "none";
-            if (event.key === "ArrowLeft") previousImage();
-            if (event.key === "ArrowRight") nextImage();
-        });
-
-        let touchStartX = 0;
-        let touchEndX = 0;
-
-        modal.addEventListener("touchstart", function(event) {
-            touchStartX = event.changedTouches[0].screenX;
-        });
-
-        modal.addEventListener("touchend", function(event) {
-            touchEndX = event.changedTouches[0].screenX;
-            const difference = touchStartX - touchEndX;
-            
-            if (difference > 50) nextImage();
-            if (difference < -50) previousImage();
-        });
-    </script>
-</body>
-</html>
